@@ -1,0 +1,17 @@
+# PyCharm
+.idea/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+.venv/
+
+# Generated datasets
+*.csv
+*.json
+
+# Temporary / backup scripts
+basket_optimizer_FIRST_MESSY.py
