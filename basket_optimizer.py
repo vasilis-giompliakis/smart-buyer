@@ -162,6 +162,86 @@ def find_substitute(
     return recommendations
 
 
+def evaluate_basket_for_retailer(df, products, basket, retailer_name):
+
+    selected_items = []
+
+    for product_id in basket:
+
+        # Check if the exact product is available at this retailer
+        exact_match = df[
+            (df["product_id"] == product_id) &
+            (df["retailer"] == retailer_name)
+        ]
+
+        if not exact_match.empty:
+            price = exact_match.iloc[0]["price"]
+
+            # construct the dictionary
+            selected_item = {
+                "requested_product_id": product_id,
+                "selected_product_id": product_id,
+                "match_type": "exact",
+                "price": price
+            }
+
+            selected_items.append(selected_item)
+
+        else:
+            substitutes = find_substitute(
+                df,
+                products,
+                product_id,
+                retailer_name
+            )
+
+            best_substitute = substitutes.iloc[0]
+            substitute_id = best_substitute["product_id"]
+
+            substitute_match = df[
+                (df["product_id"] == substitute_id) &
+                (df["retailer"] == retailer_name)
+                ]
+
+            substitute_price = substitute_match.iloc[0]["price"]
+
+            selected_item = {
+                "requested_product_id": product_id,
+                "selected_product_id": substitute_id,
+                "match_type": "substitute",
+                "price": substitute_price
+            }
+
+            selected_items.append(selected_item)
+
+    total_price = 0
+
+    for item in selected_items:
+        total_price += item["price"]
+
+
+    exact_matches = 0
+    substitutions = 0
+
+    for item in selected_items:
+        if item["match_type"] == "exact":
+            exact_matches += 1
+        else:
+            substitutions += 1
+
+
+    result = {
+        "retailer": retailer_name,
+        "total_price": total_price,
+        "exact_matches": exact_matches,
+        "substitutions": substitutions,
+        "items": selected_items
+    }
+
+    return result
+
+
+
 # --------------------------------------------------
 # Main program
 # --------------------------------------------------
@@ -192,25 +272,16 @@ def main():
     print("\nTotal:")
     print(total)
 
-    # Example:  GOURMET product is missing from Synka
-    missing_product_id = "517a59d4692e4cb79c4937b22ac6a5a8"
-    retailer_name = "Synka"
-
-    # Find possible substitute products
-    recommendations = find_substitute(
+    # Evaluate basket for one retailer using substitutes when needed
+    result = evaluate_basket_for_retailer(
         df,
         products,
-        missing_product_id,
-        retailer_name
+        basket,
+        "Synka"
     )
 
-    print("\nSubstitute recommendations:")
-    print(
-        recommendations[
-            ["product_name", "similarity"]
-        ].to_string(index=False)
-    )
-
+    print("\nBasket evaluation with substitutes:")
+    print(result)
 
 if __name__ == "__main__":
     main()
