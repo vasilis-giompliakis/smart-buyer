@@ -241,6 +241,27 @@ def evaluate_basket_for_retailer(df, products, basket, retailer_name):
     return result
 
 
+def compare_retailers(df, products, basket):
+
+    retailers = df["retailer"].unique()
+    all_results = []
+
+    for retailer in retailers:
+
+        result = evaluate_basket_for_retailer(
+            df,
+            products,
+            basket,
+            retailer
+        )
+
+        all_results.append(result)
+
+    results_df = pd.DataFrame(all_results)
+    results_df = results_df.sort_values("total_price")
+
+    return results_df
+
 
 # --------------------------------------------------
 # Main program
@@ -260,28 +281,29 @@ def main():
         "1b6e69836b514072a080cc542c7584dc"
     ]
 
-    # Find cheapest retailer for the complete basket
-    basket_totals, winner, total = find_cheapest_basket(df, basket)
-
-    print("\nBasket totals:")
-    print(basket_totals)
-
-    print("\nCheapest retailer:")
-    print(winner)
-
-    print("\nTotal:")
-    print(total)
-
-    # Evaluate basket for one retailer using substitutes when needed
-    result = evaluate_basket_for_retailer(
+    # Evaluate basket for all retailers using substitutes when needed
+    results_df = compare_retailers(
         df,
         products,
-        basket,
-        "Synka"
+        basket
     )
 
-    print("\nBasket evaluation with substitutes:")
-    print(result)
+    print("\nRetailer comparison:")
+    print(
+        results_df[
+            ["retailer", "total_price", "exact_matches", "substitutions"]
+        ].to_string(index=False)
+    )
+
+    # Select the best basket result
+    best_basket_result = results_df.iloc[0]
+    print("\nBest result is:")
+    print(
+        best_basket_result[
+            ["retailer", "total_price", "exact_matches", "substitutions"]
+        ]
+    )
+
 
 if __name__ == "__main__":
     main()
